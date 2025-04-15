@@ -901,7 +901,7 @@ struct test {
     int                      n_prompt;
     int                      n_gen;
     std::string              test_time;
-    std::vector<uint64_t>    samples_e2e_ns;        // e2e latency including prompt processing + token generation
+    std::vector<uint64_t>    samples_e2e_ns;        // e2e latency, i.e. prompt processing + token generation
     std::vector<uint64_t>    samples_prompt_ns;     // prompt processing latency
     std::vector<uint64_t>    samples_gen_ns;        // token generation latency
 
@@ -959,7 +959,7 @@ struct test {
     }
     
     std::vector<double> get_e2e_ts() const {
-        // for only prompt processing, atleast 1 token is generated
+        // for only prompt processing, at least 1 token is generated
         int n_tokens = n_gen==0 ? 1 : n_gen;
         return get_ts(samples_e2e_ns, n_tokens);
     }
