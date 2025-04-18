@@ -189,9 +189,9 @@ struct cmd_params {
 
 static const cmd_params cmd_params_defaults = {
     /* model                */ { "models/7B/ggml-model-q4_0.gguf" },
-    /* n_prompt             */ { 512 },
-    /* n_gen                */ { 128 },
-    /* n_pg                 */ {},
+    /* n_prompt             */ { 0 },
+    /* n_gen                */ { 32 },
+    /* n_pg                 */ { { 4096, 32 } },
     /* n_batch              */ { 2048 },
     /* n_ubatch             */ { 512 },
     /* type_k               */ { GGML_TYPE_F16 },
@@ -210,7 +210,7 @@ static const cmd_params cmd_params_defaults = {
     /* use_mmap             */ { true },
     /* embeddings           */ { false },
     /* numa                 */ GGML_NUMA_STRATEGY_DISABLED,
-    /* reps                 */ 5,
+    /* reps                 */ 3,
     /* prio                 */ GGML_SCHED_PRIO_NORMAL,
     /* delay                */ 0,
     /* verbose              */ false,
