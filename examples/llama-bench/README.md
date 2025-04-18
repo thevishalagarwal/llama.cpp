@@ -25,9 +25,9 @@ usage: ./llama-bench [options]
 options:
   -h, --help
   -m, --model <filename>                    (default: models/7B/ggml-model-q4_0.gguf)
-  -p, --n-prompt <n>                        (default: 512)
-  -n, --n-gen <n>                           (default: 128)
-  -pg <pp,tg>                               (default: )
+  -p, --n-prompt <n>                        (default: 0)
+  -n, --n-gen <n>                           (default: 32)
+  -pg <pp,tg>                               (default: 4096,32)
   -b, --batch-size <n>                      (default: 2048)
   -ub, --ubatch-size <n>                    (default: 512)
   -ctk, --cache-type-k <t>                  (default: f16)
@@ -94,12 +94,14 @@ $ ./llama-bench -m models/Llama-3.2-1B-Instruct-Q4_K_M.gguf -m models/Llama-3.2-
 
 | model                          |     params | backend    | ngl |          test |         prompt t/s |         gen t/s |
 | ------------------------------ | ---------: | ---------- | --: | ------------: | -----------------: | --------------: |
-| llama 1B Q4_K - Medium         |     1.24 B | CUDA       |  99 |         tg128 |        0.00 ± 0.00 |   469.99 ± 2.69 |
-| llama 1B Q4_K - Medium         |     1.24 B | CUDA       |  99 |         tg256 |        0.00 ± 0.00 |   454.10 ± 9.76 |
-| llama 1B Q4_K - Medium         |     1.24 B | CUDA       |  99 |         tg512 |        0.00 ± 0.00 |  444.62 ± 11.83 |
-| llama 3B Q4_K - Medium         |     3.21 B | CUDA       |  99 |         tg128 |        0.00 ± 0.00 |   219.82 ± 0.37 |
-| llama 3B Q4_K - Medium         |     3.21 B | CUDA       |  99 |         tg256 |        0.00 ± 0.00 |   215.15 ± 2.04 |
-| llama 3B Q4_K - Medium         |     3.21 B | CUDA       |  99 |         tg512 |        0.00 ± 0.00 |   211.12 ± 1.43 |
+| llama 1B Q4_K - Medium         |     1.24 B | CUDA       |  99 |         tg128 |        0.00 ± 0.00 |   469.34 ± 2.16 |
+| llama 1B Q4_K - Medium         |     1.24 B | CUDA       |  99 |         tg256 |        0.00 ± 0.00 |   459.78 ± 9.43 |
+| llama 1B Q4_K - Medium         |     1.24 B | CUDA       |  99 |         tg512 |        0.00 ± 0.00 |  449.25 ± 11.74 |
+| llama 1B Q4_K - Medium         |     1.24 B | CUDA       |  99 |   pp4096+tg32 |    15545.82 ± 8.35 |   385.90 ± 3.47 |
+| llama 3B Q4_K - Medium         |     3.21 B | CUDA       |  99 |         tg128 |        0.00 ± 0.00 |   212.78 ± 5.12 |
+| llama 3B Q4_K - Medium         |     3.21 B | CUDA       |  99 |         tg256 |        0.00 ± 0.00 |   214.56 ± 2.16 |
+| llama 3B Q4_K - Medium         |     3.21 B | CUDA       |  99 |         tg512 |        0.00 ± 0.00 |   212.84 ± 1.41 |
+| llama 3B Q4_K - Medium         |     3.21 B | CUDA       |  99 |   pp4096+tg32 |   8825.07 ± 100.28 |   177.25 ± 1.89 |
 
 ### Prompt processing with different batch sizes
 
@@ -109,10 +111,14 @@ $ ./llama-bench -n 0 -p 1024 -b 128,256,512,1024
 
 | model                          |     params | backend    | ngl | n_batch |          test |         prompt t/s |         gen t/s |
 | ------------------------------ | ---------: | ---------- | --: | ------: | ------------: | -----------------: | --------------: |
-| llama 1B Q4_K - Medium         |     1.24 B | CUDA       |  99 |     128 |        pp1024 |  16751.82 ± 667.31 |     0.00 ± 0.00 |
-| llama 1B Q4_K - Medium         |     1.24 B | CUDA       |  99 |     256 |        pp1024 |  23255.17 ± 446.86 |     0.00 ± 0.00 |
-| llama 1B Q4_K - Medium         |     1.24 B | CUDA       |  99 |     512 |        pp1024 |  25544.36 ± 571.16 |     0.00 ± 0.00 |
-| llama 1B Q4_K - Medium         |     1.24 B | CUDA       |  99 |    1024 |        pp1024 |  25610.04 ± 606.37 |     0.00 ± 0.00 |
+| llama 1B Q4_K - Medium         |     1.24 B | CUDA       |  99 |     128 |        pp1024 |  17125.18 ± 731.13 |     0.00 ± 0.00 |
+| llama 1B Q4_K - Medium         |     1.24 B | CUDA       |  99 |     128 |   pp4096+tg32 |  12139.39 ± 446.63 |   378.76 ± 8.18 |
+| llama 1B Q4_K - Medium         |     1.24 B | CUDA       |  99 |     256 |        pp1024 |  24112.17 ± 161.18 |     0.00 ± 0.00 |
+| llama 1B Q4_K - Medium         |     1.24 B | CUDA       |  99 |     256 |   pp4096+tg32 |   14508.80 ± 53.00 |   386.58 ± 0.42 |
+| llama 1B Q4_K - Medium         |     1.24 B | CUDA       |  99 |     512 |        pp1024 |  25534.56 ± 368.03 |     0.00 ± 0.00 |
+| llama 1B Q4_K - Medium         |     1.24 B | CUDA       |  99 |     512 |   pp4096+tg32 |   15388.41 ± 13.06 |   386.30 ± 0.53 |
+| llama 1B Q4_K - Medium         |     1.24 B | CUDA       |  99 |    1024 |        pp1024 |  25654.61 ± 772.86 |     0.00 ± 0.00 |
+| llama 1B Q4_K - Medium         |     1.24 B | CUDA       |  99 |    1024 |   pp4096+tg32 |    15487.92 ± 8.59 |   385.20 ± 0.50 |
 
 ### Different numbers of threads
 
@@ -122,18 +128,24 @@ $ ./llama-bench -n 0 -n 16 -p 64 -t 1,2,4,8,16,32
 
 | model                          |     params | backend    | ngl | threads |          test |         prompt t/s |         gen t/s |
 | ------------------------------ | ---------: | ---------- | --: | ------: | ------------: | -----------------: | --------------: |
-| llama 1B Q4_K - Medium         |     1.24 B | CUDA       |  99 |       1 |          pp64 |  10322.32 ± 193.62 |     0.00 ± 0.00 |
-| llama 1B Q4_K - Medium         |     1.24 B | CUDA       |  99 |       1 |          tg16 |        0.00 ± 0.00 |   444.22 ± 6.66 |
-| llama 1B Q4_K - Medium         |     1.24 B | CUDA       |  99 |       2 |          pp64 |   7313.31 ± 145.33 |     0.00 ± 0.00 |
-| llama 1B Q4_K - Medium         |     1.24 B | CUDA       |  99 |       2 |          tg16 |        0.00 ± 0.00 |  468.99 ± 12.30 |
-| llama 1B Q4_K - Medium         |     1.24 B | CUDA       |  99 |       4 |          pp64 | 10111.46 ± 1261.15 |     0.00 ± 0.00 |
-| llama 1B Q4_K - Medium         |     1.24 B | CUDA       |  99 |       4 |          tg16 |        0.00 ± 0.00 |  464.07 ± 18.15 |
-| llama 1B Q4_K - Medium         |     1.24 B | CUDA       |  99 |       8 |          pp64 |  9605.79 ± 1684.50 |     0.00 ± 0.00 |
-| llama 1B Q4_K - Medium         |     1.24 B | CUDA       |  99 |       8 |          tg16 |        0.00 ± 0.00 |  469.92 ± 16.23 |
-| llama 1B Q4_K - Medium         |     1.24 B | CUDA       |  99 |      16 |          pp64 |  10336.80 ± 740.34 |     0.00 ± 0.00 |
-| llama 1B Q4_K - Medium         |     1.24 B | CUDA       |  99 |      16 |          tg16 |        0.00 ± 0.00 |  472.06 ± 10.29 |
-| llama 1B Q4_K - Medium         |     1.24 B | CUDA       |  99 |      32 |          pp64 |  8819.08 ± 1529.51 |     0.00 ± 0.00 |
-| llama 1B Q4_K - Medium         |     1.24 B | CUDA       |  99 |      32 |          tg16 |        0.00 ± 0.00 |  458.20 ± 15.14 |
+| llama 1B Q4_K - Medium         |     1.24 B | CUDA       |  99 |       1 |          pp64 |  9229.99 ± 1897.41 |     0.00 ± 0.00 |
+| llama 1B Q4_K - Medium         |     1.24 B | CUDA       |  99 |       1 |          tg16 |        0.00 ± 0.00 |  444.33 ± 25.11 |
+| llama 1B Q4_K - Medium         |     1.24 B | CUDA       |  99 |       1 |   pp4096+tg32 |   15357.53 ± 27.52 |   373.90 ± 7.03 |
+| llama 1B Q4_K - Medium         |     1.24 B | CUDA       |  99 |       2 |          pp64 |   10799.57 ± 33.90 |     0.00 ± 0.00 |
+| llama 1B Q4_K - Medium         |     1.24 B | CUDA       |  99 |       2 |          tg16 |        0.00 ± 0.00 |  461.43 ± 10.99 |
+| llama 1B Q4_K - Medium         |     1.24 B | CUDA       |  99 |       2 |   pp4096+tg32 |   15371.18 ± 57.24 |   372.59 ± 4.02 |
+| llama 1B Q4_K - Medium         |     1.24 B | CUDA       |  99 |       4 |          pp64 |  11033.35 ± 177.05 |     0.00 ± 0.00 |
+| llama 1B Q4_K - Medium         |     1.24 B | CUDA       |  99 |       4 |          tg16 |        0.00 ± 0.00 |   448.57 ± 8.66 |
+| llama 1B Q4_K - Medium         |     1.24 B | CUDA       |  99 |       4 |   pp4096+tg32 |   15371.12 ± 43.70 |   376.71 ± 0.93 |
+| llama 1B Q4_K - Medium         |     1.24 B | CUDA       |  99 |       8 |          pp64 |  11206.45 ± 187.47 |     0.00 ± 0.00 |
+| llama 1B Q4_K - Medium         |     1.24 B | CUDA       |  99 |       8 |          tg16 |        0.00 ± 0.00 |   457.99 ± 6.92 |
+| llama 1B Q4_K - Medium         |     1.24 B | CUDA       |  99 |       8 |   pp4096+tg32 |  15022.14 ± 161.68 |   369.76 ± 4.71 |
+| llama 1B Q4_K - Medium         |     1.24 B | CUDA       |  99 |      16 |          pp64 |  10397.19 ± 304.08 |     0.00 ± 0.00 |
+| llama 1B Q4_K - Medium         |     1.24 B | CUDA       |  99 |      16 |          tg16 |        0.00 ± 0.00 |   457.53 ± 7.06 |
+| llama 1B Q4_K - Medium         |     1.24 B | CUDA       |  99 |      16 |   pp4096+tg32 |  15434.32 ± 158.08 |   372.00 ± 3.34 |
+| llama 1B Q4_K - Medium         |     1.24 B | CUDA       |  99 |      32 |          pp64 | 10588.34 ± 1043.71 |     0.00 ± 0.00 |
+| llama 1B Q4_K - Medium         |     1.24 B | CUDA       |  99 |      32 |          tg16 |        0.00 ± 0.00 |   468.10 ± 9.16 |
+| llama 1B Q4_K - Medium         |     1.24 B | CUDA       |  99 |      32 |   pp4096+tg32 |    15544.54 ± 4.30 |   374.14 ± 7.18 |
 
 ### Different numbers of layers offloaded to the GPU
 
@@ -143,22 +155,22 @@ $ ./llama-bench -ngl 10,20,30,31,32,33,34,35
 
 | model                          |     params | backend    | ngl |          test |         prompt t/s |         gen t/s |
 | ------------------------------ | ---------: | ---------- | --: | ------------: | -----------------: | --------------: |
-| llama 1B Q4_K - Medium         |     1.24 B | CUDA       |  10 |         pp512 |  12082.67 ± 403.77 |     0.00 ± 0.00 |
-| llama 1B Q4_K - Medium         |     1.24 B | CUDA       |  10 |         tg128 |        0.00 ± 0.00 |   106.37 ± 2.72 |
-| llama 1B Q4_K - Medium         |     1.24 B | CUDA       |  20 |         pp512 | 16742.49 ± 8252.51 |     0.00 ± 0.00 |
-| llama 1B Q4_K - Medium         |     1.24 B | CUDA       |  20 |         tg128 |        0.00 ± 0.00 |   454.01 ± 8.64 |
-| llama 1B Q4_K - Medium         |     1.24 B | CUDA       |  30 |         pp512 |  29580.40 ± 106.86 |     0.00 ± 0.00 |
-| llama 1B Q4_K - Medium         |     1.24 B | CUDA       |  30 |         tg128 |        0.00 ± 0.00 |   457.68 ± 9.88 |
-| llama 1B Q4_K - Medium         |     1.24 B | CUDA       |  31 |         pp512 |  29594.52 ± 154.46 |     0.00 ± 0.00 |
-| llama 1B Q4_K - Medium         |     1.24 B | CUDA       |  31 |         tg128 |        0.00 ± 0.00 |   465.27 ± 9.24 |
-| llama 1B Q4_K - Medium         |     1.24 B | CUDA       |  32 |         pp512 |  29503.27 ± 174.82 |     0.00 ± 0.00 |
-| llama 1B Q4_K - Medium         |     1.24 B | CUDA       |  32 |         tg128 |        0.00 ± 0.00 |   467.16 ± 2.22 |
-| llama 1B Q4_K - Medium         |     1.24 B | CUDA       |  33 |         pp512 |  29479.41 ± 180.78 |     0.00 ± 0.00 |
-| llama 1B Q4_K - Medium         |     1.24 B | CUDA       |  33 |         tg128 |        0.00 ± 0.00 |   465.67 ± 6.10 |
-| llama 1B Q4_K - Medium         |     1.24 B | CUDA       |  34 |         pp512 |   29446.50 ± 59.09 |     0.00 ± 0.00 |
-| llama 1B Q4_K - Medium         |     1.24 B | CUDA       |  34 |         tg128 |        0.00 ± 0.00 |   470.60 ± 2.00 |
-| llama 1B Q4_K - Medium         |     1.24 B | CUDA       |  35 |         pp512 |  29369.74 ± 229.29 |     0.00 ± 0.00 |
-| llama 1B Q4_K - Medium         |     1.24 B | CUDA       |  35 |         tg128 |        0.00 ± 0.00 |   467.41 ± 6.81 |
+| llama 1B Q4_K - Medium         |     1.24 B | CUDA       |  10 |          tg32 |        0.00 ± 0.00 |   107.29 ± 1.37 |
+| llama 1B Q4_K - Medium         |     1.24 B | CUDA       |  10 |   pp4096+tg32 |   8458.79 ± 154.44 |    70.84 ± 0.10 |
+| llama 1B Q4_K - Medium         |     1.24 B | CUDA       |  20 |          tg32 |        0.00 ± 0.00 |   484.02 ± 0.93 |
+| llama 1B Q4_K - Medium         |     1.24 B | CUDA       |  20 |   pp4096+tg32 |  15303.20 ± 120.74 |   372.57 ± 6.32 |
+| llama 1B Q4_K - Medium         |     1.24 B | CUDA       |  30 |          tg32 |        0.00 ± 0.00 |   473.82 ± 4.27 |
+| llama 1B Q4_K - Medium         |     1.24 B | CUDA       |  30 |   pp4096+tg32 |  15372.85 ± 239.94 |   378.99 ± 4.72 |
+| llama 1B Q4_K - Medium         |     1.24 B | CUDA       |  31 |          tg32 |        0.00 ± 0.00 |   474.76 ± 7.11 |
+| llama 1B Q4_K - Medium         |     1.24 B | CUDA       |  31 |   pp4096+tg32 |  15373.12 ± 263.84 |  377.83 ± 12.16 |
+| llama 1B Q4_K - Medium         |     1.24 B | CUDA       |  32 |          tg32 |        0.00 ± 0.00 |   482.19 ± 0.92 |
+| llama 1B Q4_K - Medium         |     1.24 B | CUDA       |  32 |   pp4096+tg32 |   15515.24 ± 15.85 |   369.73 ± 0.23 |
+| llama 1B Q4_K - Medium         |     1.24 B | CUDA       |  33 |          tg32 |        0.00 ± 0.00 |   482.07 ± 0.63 |
+| llama 1B Q4_K - Medium         |     1.24 B | CUDA       |  33 |   pp4096+tg32 |  15299.93 ± 261.50 |   373.32 ± 9.92 |
+| llama 1B Q4_K - Medium         |     1.24 B | CUDA       |  34 |          tg32 |        0.00 ± 0.00 |   482.89 ± 0.99 |
+| llama 1B Q4_K - Medium         |     1.24 B | CUDA       |  34 |   pp4096+tg32 |   15551.65 ± 14.10 |   381.00 ± 6.75 |
+| llama 1B Q4_K - Medium         |     1.24 B | CUDA       |  35 |          tg32 |        0.00 ± 0.00 |   481.55 ± 1.15 |
+| llama 1B Q4_K - Medium         |     1.24 B | CUDA       |  35 |   pp4096+tg32 |    15565.34 ± 5.96 |   385.77 ± 0.25 |
 
 ## Output formats
 
@@ -172,8 +184,8 @@ $ ./llama-bench -o md
 
 | model                          |     params | backend    | ngl |          test |         prompt t/s |         gen t/s |
 | ------------------------------ | ---------: | ---------- | --: | ------------: | -----------------: | --------------: |
-| llama 1B Q4_K - Medium         |     1.24 B | CUDA       |  99 |         pp512 |   27663.05 ± 90.18 |     0.00 ± 0.00 |
-| llama 1B Q4_K - Medium         |     1.24 B | CUDA       |  99 |         tg128 |        0.00 ± 0.00 |   467.13 ± 5.21 |
+| llama 1B Q4_K - Medium         |     1.24 B | CUDA       |  99 |          tg32 |        0.00 ± 0.00 |  455.34 ± 13.25 |
+| llama 1B Q4_K - Medium         |     1.24 B | CUDA       |  99 |   pp4096+tg32 |   15479.05 ± 93.15 |   383.70 ± 2.79 |
 
 ### CSV
 
@@ -183,8 +195,8 @@ $ ./llama-bench -o csv
 
 ```csv
 build_commit,build_number,cpu_info,gpu_info,backends,model_filename,model_type,model_size,model_n_params,n_batch,n_ubatch,n_threads,cpu_mask,cpu_strict,poll,type_k,type_v,n_gpu_layers,split_mode,main_gpu,no_kv_offload,flash_attn,tensor_split,use_mmap,embeddings,n_prompt,n_gen,test_time,avg_prompt_ns,stddev_prompt_ns,avg_prompt_ts,stddev_prompt_ts,avg_gen_ns,stddev_gen_ns,avg_gen_ts,stddev_gen_ts
-"df46ea53","5099","AMD Ryzen 7 7800X3D 8-Core Processor           ","NVIDIA GeForce RTX 4080","CUDA","models/Llama-3.2-1B-Instruct-Q4_K_M.gguf","llama 1B Q4_K - Medium","799862912","1235814432","2048","512","8","0x0","0","50","f16","f16","99","layer","0","0","0","0.00","1","0","512","0","2025-04-18T07:40:28Z","18599580","87220","27527.987050","128.945972","60","54","0.000000","0.000000"
-"df46ea53","5099","AMD Ryzen 7 7800X3D 8-Core Processor           ","NVIDIA GeForce RTX 4080","CUDA","models/Llama-3.2-1B-Instruct-Q4_K_M.gguf","llama 1B Q4_K - Medium","799862912","1235814432","2048","512","8","0x0","0","50","f16","f16","99","layer","0","0","0","0.00","1","0","0","128","2025-04-18T07:40:28Z","0","0","0.000000","0.000000","273595440","4100226","467.926504","6.877051"
+"fa6cb8ae","5100","AMD Ryzen 7 7800X3D 8-Core Processor           ","NVIDIA GeForce RTX 4080","CUDA","models/Llama-3.2-1B-Instruct-Q4_K_M.gguf","llama 1B Q4_K - Medium","799862912","1235814432","2048","512","8","0x0","0","50","f16","f16","99","layer","0","0","0","0.00","1","0","0","32","2025-04-18T11:21:18Z","66","58","0.000000","0.000000","71886000","7590","445.149267","0.046999"
+"fa6cb8ae","5100","AMD Ryzen 7 7800X3D 8-Core Processor           ","NVIDIA GeForce RTX 4080","CUDA","models/Llama-3.2-1B-Instruct-Q4_K_M.gguf","llama 1B Q4_K - Medium","799862912","1235814432","2048","512","8","0x0","0","50","f16","f16","99","layer","0","0","0","0.00","1","0","4096","32","2025-04-18T11:21:18Z","272293733","3247466","15044.014817","180.586130","87201066","125581","366.968490","0.525734"
 ```
 
 ### JSON
@@ -196,50 +208,8 @@ $ ./llama-bench -o json
 ```json
 [
   {
-    "build_commit": "df46ea53",
-    "build_number": 5099,
-    "cpu_info": "AMD Ryzen 7 7800X3D 8-Core Processor           ",
-    "gpu_info": "NVIDIA GeForce RTX 4080",
-    "backends": "CUDA",
-    "model_filename": "models/Llama-3.2-1B-Instruct-Q4_K_M.gguf",
-    "model_type": "llama 1B Q4_K - Medium",
-    "model_size": 799862912,
-    "model_n_params": 1235814432,
-    "n_batch": 2048,
-    "n_ubatch": 512,
-    "n_threads": 8,
-    "cpu_mask": "0x0",
-    "cpu_strict": false,
-    "poll": 50,
-    "type_k": "f16",
-    "type_v": "f16",
-    "n_gpu_layers": 99,
-    "split_mode": "layer",
-    "main_gpu": 0,
-    "no_kv_offload": false,
-    "flash_attn": false,
-    "tensor_split": "0.00",
-    "use_mmap": true,
-    "embeddings": false,
-    "n_prompt": 512,
-    "n_gen": 0,
-    "test_time": "2025-04-18T07:41:24Z",
-    "avg_prompt_ns": 19432500,
-    "stddev_prompt_ns": 1155276,
-    "avg_prompt_ts": 26420.253006,
-    "stddev_prompt_ts": 1527.724050,
-    "avg_gen_ns": 60,
-    "stddev_gen_ns": 89,
-    "avg_gen_ts": 0.000000,
-    "stddev_gen_ts": 0.000000,
-    "samples_prompt_ns": [ 18723500, 18641500, 18476200, 21034200, 20287100 ],
-    "samples_prompt_ts": [ 27345.3, 27465.6, 27711.3, 24341.3, 25237.7 ]
-    "samples_gen_ns": [ 0, 100, 0, 200, 0 ],
-    "samples_gen_ts": [ 0 ]
-  },
-  {
-    "build_commit": "df46ea53",
-    "build_number": 5099,
+    "build_commit": "fa6cb8ae",
+    "build_number": 5100,
     "cpu_info": "AMD Ryzen 7 7800X3D 8-Core Processor           ",
     "gpu_info": "NVIDIA GeForce RTX 4080",
     "backends": "CUDA",
@@ -264,20 +234,62 @@ $ ./llama-bench -o json
     "use_mmap": true,
     "embeddings": false,
     "n_prompt": 0,
-    "n_gen": 128,
-    "test_time": "2025-04-18T07:41:24Z",
-    "avg_prompt_ns": 20,
-    "stddev_prompt_ns": 44,
+    "n_gen": 32,
+    "test_time": "2025-04-18T11:21:45Z",
+    "avg_prompt_ns": 66,
+    "stddev_prompt_ns": 58,
     "avg_prompt_ts": 0.000000,
     "stddev_prompt_ts": 0.000000,
-    "avg_gen_ns": 279581280,
-    "stddev_gen_ns": 7013491,
-    "avg_gen_ts": 458.054981,
-    "stddev_gen_ts": 11.337387,
-    "samples_prompt_ns": [ 0, 0, 0, 0, 100 ],
+    "avg_gen_ns": 67903233,
+    "stddev_gen_ns": 498856,
+    "avg_gen_ts": 471.275875,
+    "stddev_gen_ts": 3.475513,
+    "samples_prompt_ns": [ 100, 0, 100 ],
     "samples_prompt_ts": [ 0 ]
-    "samples_gen_ns": [ 290465300, 280112200, 280351000, 274751300, 272226600 ],
-    "samples_gen_ts": [ 440.672, 456.96, 456.571, 465.876, 470.197 ]
+    "samples_gen_ns": [ 68251300, 68126600, 67331800 ],
+    "samples_gen_ts": [ 468.856, 469.714, 475.258 ]
+  },
+  {
+    "build_commit": "fa6cb8ae",
+    "build_number": 5100,
+    "cpu_info": "AMD Ryzen 7 7800X3D 8-Core Processor           ",
+    "gpu_info": "NVIDIA GeForce RTX 4080",
+    "backends": "CUDA",
+    "model_filename": "models/Llama-3.2-1B-Instruct-Q4_K_M.gguf",
+    "model_type": "llama 1B Q4_K - Medium",
+    "model_size": 799862912,
+    "model_n_params": 1235814432,
+    "n_batch": 2048,
+    "n_ubatch": 512,
+    "n_threads": 8,
+    "cpu_mask": "0x0",
+    "cpu_strict": false,
+    "poll": 50,
+    "type_k": "f16",
+    "type_v": "f16",
+    "n_gpu_layers": 99,
+    "split_mode": "layer",
+    "main_gpu": 0,
+    "no_kv_offload": false,
+    "flash_attn": false,
+    "tensor_split": "0.00",
+    "use_mmap": true,
+    "embeddings": false,
+    "n_prompt": 4096,
+    "n_gen": 32,
+    "test_time": "2025-04-18T11:21:46Z",
+    "avg_prompt_ns": 263273600,
+    "stddev_prompt_ns": 273278,
+    "avg_prompt_ts": 15557.970647,
+    "stddev_prompt_ts": 16.143068,
+    "avg_gen_ns": 85820333,
+    "stddev_gen_ns": 4372337,
+    "avg_gen_ts": 373.500825,
+    "stddev_gen_ts": 18.514532,
+    "samples_prompt_ns": [ 263043600, 263201500, 263575700 ],
+    "samples_prompt_ts": [ 15571.6, 15562.2, 15540.1 ]
+    "samples_gen_ns": [ 82844300, 83776400, 90840300 ],
+    "samples_gen_ts": [ 386.267, 381.969, 352.267 ]
   }
 ]
 ```
@@ -290,8 +302,8 @@ $ ./llama-bench -o jsonl
 ```
 
 ```json lines
-{"build_commit": "df46ea53", "build_number": 5099, "cpu_info": "AMD Ryzen 7 7800X3D 8-Core Processor           ", "gpu_info": "NVIDIA GeForce RTX 4080", "backends": "CUDA", "model_filename": "models/Llama-3.2-1B-Instruct-Q4_K_M.gguf", "model_type": "llama 1B Q4_K - Medium", "model_size": 799862912, "model_n_params": 1235814432, "n_batch": 2048, "n_ubatch": 512, "n_threads": 8, "cpu_mask": "0x0", "cpu_strict": false, "poll": 50, "type_k": "f16", "type_v": "f16", "n_gpu_layers": 99, "split_mode": "layer", "main_gpu": 0, "no_kv_offload": false, "flash_attn": false, "tensor_split": "0.00", "use_mmap": true, "embeddings": false, "n_prompt": 512, "n_gen": 0, "test_time": "2025-04-18T07:42:16Z", "avg_prompt_ns": 18637700, "stddev_prompt_ns": 164536, "avg_prompt_ts": 27472.914745, "stddev_prompt_ts": 242.676976, "avg_gen_ns": 0, "stddev_gen_ns": 0, "avg_gen_ts": 0.000000, "stddev_gen_ts": 0.000000, "samples_prompt_ns": [ 18782700, 18654200, 18812300, 18466100, 18473200 ],"samples_prompt_ts": [ 27259.1, 27446.9, 27216.2, 27726.5, 27715.8 ]"samples_gen_ns": [ 0, 0, 0, 0, 0 ],"samples_gen_ts": [ 0 ]}
-{"build_commit": "df46ea53", "build_number": 5099, "cpu_info": "AMD Ryzen 7 7800X3D 8-Core Processor           ", "gpu_info": "NVIDIA GeForce RTX 4080", "backends": "CUDA", "model_filename": "models/Llama-3.2-1B-Instruct-Q4_K_M.gguf", "model_type": "llama 1B Q4_K - Medium", "model_size": 799862912, "model_n_params": 1235814432, "n_batch": 2048, "n_ubatch": 512, "n_threads": 8, "cpu_mask": "0x0", "cpu_strict": false, "poll": 50, "type_k": "f16", "type_v": "f16", "n_gpu_layers": 99, "split_mode": "layer", "main_gpu": 0, "no_kv_offload": false, "flash_attn": false, "tensor_split": "0.00", "use_mmap": true, "embeddings": false, "n_prompt": 0, "n_gen": 128, "test_time": "2025-04-18T07:42:17Z", "avg_prompt_ns": 100, "stddev_prompt_ns": 122, "avg_prompt_ts": 0.000000, "stddev_prompt_ts": 0.000000, "avg_gen_ns": 273159220, "stddev_gen_ns": 2025528, "avg_gen_ts": 468.611680, "stddev_gen_ts": 3.456568, "samples_prompt_ns": [ 300, 100, 100, 0, 0 ],"samples_prompt_ts": [ 0 ]"samples_gen_ns": [ 276312400, 272096600, 271459600, 274053300, 271874200 ],"samples_gen_ts": [ 463.244, 470.421, 471.525, 467.062, 470.806 ]}
+{"build_commit": "fa6cb8ae", "build_number": 5100, "cpu_info": "AMD Ryzen 7 7800X3D 8-Core Processor           ", "gpu_info": "NVIDIA GeForce RTX 4080", "backends": "CUDA", "model_filename": "models/Llama-3.2-1B-Instruct-Q4_K_M.gguf", "model_type": "llama 1B Q4_K - Medium", "model_size": 799862912, "model_n_params": 1235814432, "n_batch": 2048, "n_ubatch": 512, "n_threads": 8, "cpu_mask": "0x0", "cpu_strict": false, "poll": 50, "type_k": "f16", "type_v": "f16", "n_gpu_layers": 99, "split_mode": "layer", "main_gpu": 0, "no_kv_offload": false, "flash_attn": false, "tensor_split": "0.00", "use_mmap": true, "embeddings": false, "n_prompt": 0, "n_gen": 32, "test_time": "2025-04-18T11:22:14Z", "avg_prompt_ns": 100, "stddev_prompt_ns": 0, "avg_prompt_ts": 0.000000, "stddev_prompt_ts": 0.000000, "avg_gen_ns": 71156300, "stddev_gen_ns": 912152, "avg_gen_ts": 449.763857, "stddev_gen_ts": 5.808090, "samples_prompt_ns": [ 100, 100, 100 ],"samples_prompt_ts": [ 0 ]"samples_gen_ns": [ 71725200, 71639500, 70104200 ],"samples_gen_ts": [ 446.147, 446.681, 456.463 ]}
+{"build_commit": "fa6cb8ae", "build_number": 5100, "cpu_info": "AMD Ryzen 7 7800X3D 8-Core Processor           ", "gpu_info": "NVIDIA GeForce RTX 4080", "backends": "CUDA", "model_filename": "models/Llama-3.2-1B-Instruct-Q4_K_M.gguf", "model_type": "llama 1B Q4_K - Medium", "model_size": 799862912, "model_n_params": 1235814432, "n_batch": 2048, "n_ubatch": 512, "n_threads": 8, "cpu_mask": "0x0", "cpu_strict": false, "poll": 50, "type_k": "f16", "type_v": "f16", "n_gpu_layers": 99, "split_mode": "layer", "main_gpu": 0, "no_kv_offload": false, "flash_attn": false, "tensor_split": "0.00", "use_mmap": true, "embeddings": false, "n_prompt": 4096, "n_gen": 32, "test_time": "2025-04-18T11:22:14Z", "avg_prompt_ns": 267673800, "stddev_prompt_ns": 4917668, "avg_prompt_ts": 15305.627579, "stddev_prompt_ts": 279.255714, "avg_gen_ns": 83914500, "stddev_gen_ns": 1515058, "avg_gen_ts": 381.422650, "stddev_gen_ts": 6.822569, "samples_prompt_ns": [ 266315000, 273128000, 263578400 ],"samples_prompt_ts": [ 15380.3, 14996.6, 15540 ]"samples_gen_ns": [ 85644600, 83274100, 82824800 ],"samples_gen_ts": [ 373.637, 384.273, 386.358 ]}
 ```
 
 
@@ -343,6 +355,6 @@ CREATE TABLE IF NOT EXISTS test (
   stddev_gen_ts REAL
 );
 
-INSERT INTO test (build_commit, build_number, cpu_info, gpu_info, backends, model_filename, model_type, model_size, model_n_params, n_batch, n_ubatch, n_threads, cpu_mask, cpu_strict, poll, type_k, type_v, n_gpu_layers, split_mode, main_gpu, no_kv_offload, flash_attn, tensor_split, use_mmap, embeddings, n_prompt, n_gen, test_time, avg_prompt_ns, stddev_prompt_ns, avg_prompt_ts, stddev_prompt_ts, avg_gen_ns, stddev_gen_ns, avg_gen_ts, stddev_gen_ts) VALUES ('df46ea53', '5099', 'AMD Ryzen 7 7800X3D 8-Core Processor           ', 'NVIDIA GeForce RTX 4080', 'CUDA', 'models/Llama-3.2-1B-Instruct-Q4_K_M.gguf', 'llama 1B Q4_K - Medium', '799862912', '1235814432', '2048', '512', '8', '0x0', '0', '50', 'f16', 'f16', '99', 'layer', '0', '0', '0', '0.00', '1', '0', '512', '0', '2025-04-18T07:42:43Z', '18543960', '131206', '27611.175041', '195.547424', '60', '54', '0.000000', '0.000000');
-INSERT INTO test (build_commit, build_number, cpu_info, gpu_info, backends, model_filename, model_type, model_size, model_n_params, n_batch, n_ubatch, n_threads, cpu_mask, cpu_strict, poll, type_k, type_v, n_gpu_layers, split_mode, main_gpu, no_kv_offload, flash_attn, tensor_split, use_mmap, embeddings, n_prompt, n_gen, test_time, avg_prompt_ns, stddev_prompt_ns, avg_prompt_ts, stddev_prompt_ts, avg_gen_ns, stddev_gen_ns, avg_gen_ts, stddev_gen_ts) VALUES ('df46ea53', '5099', 'AMD Ryzen 7 7800X3D 8-Core Processor           ', 'NVIDIA GeForce RTX 4080', 'CUDA', 'models/Llama-3.2-1B-Instruct-Q4_K_M.gguf', 'llama 1B Q4_K - Medium', '799862912', '1235814432', '2048', '512', '8', '0x0', '0', '50', 'f16', 'f16', '99', 'layer', '0', '0', '0', '0.00', '1', '0', '0', '128', '2025-04-18T07:42:43Z', '20', '44', '0.000000', '0.000000', '274190080', '2765950', '466.867210', '4.680900');
+INSERT INTO test (build_commit, build_number, cpu_info, gpu_info, backends, model_filename, model_type, model_size, model_n_params, n_batch, n_ubatch, n_threads, cpu_mask, cpu_strict, poll, type_k, type_v, n_gpu_layers, split_mode, main_gpu, no_kv_offload, flash_attn, tensor_split, use_mmap, embeddings, n_prompt, n_gen, test_time, avg_prompt_ns, stddev_prompt_ns, avg_prompt_ts, stddev_prompt_ts, avg_gen_ns, stddev_gen_ns, avg_gen_ts, stddev_gen_ts) VALUES ('fa6cb8ae', '5100', 'AMD Ryzen 7 7800X3D 8-Core Processor           ', 'NVIDIA GeForce RTX 4080', 'CUDA', 'models/Llama-3.2-1B-Instruct-Q4_K_M.gguf', 'llama 1B Q4_K - Medium', '799862912', '1235814432', '2048', '512', '8', '0x0', '0', '50', 'f16', 'f16', '99', 'layer', '0', '0', '0', '0.00', '1', '0', '0', '32', '2025-04-18T11:22:37Z', '66', '58', '0.000000', '0.000000', '70741266', '2050337', '452.606173', '13.122321');
+INSERT INTO test (build_commit, build_number, cpu_info, gpu_info, backends, model_filename, model_type, model_size, model_n_params, n_batch, n_ubatch, n_threads, cpu_mask, cpu_strict, poll, type_k, type_v, n_gpu_layers, split_mode, main_gpu, no_kv_offload, flash_attn, tensor_split, use_mmap, embeddings, n_prompt, n_gen, test_time, avg_prompt_ns, stddev_prompt_ns, avg_prompt_ts, stddev_prompt_ts, avg_gen_ns, stddev_gen_ns, avg_gen_ts, stddev_gen_ts) VALUES ('fa6cb8ae', '5100', 'AMD Ryzen 7 7800X3D 8-Core Processor           ', 'NVIDIA GeForce RTX 4080', 'CUDA', 'models/Llama-3.2-1B-Instruct-Q4_K_M.gguf', 'llama 1B Q4_K - Medium', '799862912', '1235814432', '2048', '512', '8', '0x0', '0', '50', 'f16', 'f16', '99', 'layer', '0', '0', '0', '0.00', '1', '0', '4096', '32', '2025-04-18T11:22:37Z', '270934866', '4466069', '15120.737903', '246.900896', '85258733', '2156168', '375.487736', '9.468350');
 ```
