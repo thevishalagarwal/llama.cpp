@@ -901,7 +901,6 @@ struct test {
     int                      n_prompt;
     int                      n_gen;
     std::string              test_time;
-    std::vector<uint64_t>    samples_e2e_ns;        // e2e latency, i.e. prompt processing + token generation
     std::vector<uint64_t>    samples_prompt_ns;     // prompt processing latency
     std::vector<uint64_t>    samples_gen_ns;        // token generation latency
 
@@ -941,11 +940,9 @@ struct test {
         (void) ctx;
     }
 
-    uint64_t avg_e2e_ns() const { return ::avg(samples_e2e_ns); }
     uint64_t avg_prompt_ns() const { return ::avg(samples_prompt_ns); }
     uint64_t avg_gen_ns() const { return ::avg(samples_gen_ns); }
 
-    uint64_t stddev_e2e_ns() const { return ::stdev(samples_e2e_ns); }
     uint64_t stddev_prompt_ns() const { return ::stdev(samples_prompt_ns); }
     uint64_t stddev_gen_ns() const { return ::stdev(samples_gen_ns); }
 
@@ -958,11 +955,6 @@ struct test {
         return ts;
     }
     
-    std::vector<double> get_e2e_ts() const {
-        // for only prompt processing, at least 1 token is generated
-        int n_tokens = n_gen==0 ? 1 : n_gen;
-        return get_ts(samples_e2e_ns, n_tokens);
-    }
     std::vector<double> get_prompt_ts() const {
         return get_ts(samples_prompt_ns, n_prompt);
     }
@@ -970,11 +962,9 @@ struct test {
         return get_ts(samples_gen_ns, n_gen);
     }
 
-    double avg_e2e_ts() const { return ::avg(get_e2e_ts()); }
     double avg_prompt_ts() const { return ::avg(get_prompt_ts()); }
     double avg_gen_ts() const { return ::avg(get_gen_ts()); }
 
-    double stdev_e2e_ts() const { return ::stdev(get_e2e_ts()); }
     double stdev_prompt_ts() const { return ::stdev(get_prompt_ts()); }
     double stdev_gen_ts() const { return ::stdev(get_gen_ts()); }
 
@@ -992,14 +982,13 @@ struct test {
 
     static const std::vector<std::string> & get_fields() {
         static const std::vector<std::string> fields = {
-            "build_commit", "build_number", "cpu_info",       "gpu_info",   "backends",     "model_filename",
-            "model_type",   "model_size",   "model_n_params", "n_batch",    "n_ubatch",     "n_threads",
-            "cpu_mask",     "cpu_strict",   "poll",           "type_k",     "type_v",       "n_gpu_layers",
-            "split_mode",   "main_gpu",     "no_kv_offload",  "flash_attn", "tensor_split", "use_mmap",
-            "embeddings",   "n_prompt",     "n_gen",          "test_time",  
-            "avg_e2e_ns",  "stddev_e2e_ns",    "avg_e2e_ts",     "stddev_e2e_ts",
-            "avg_prompt_ns",   "stddev_prompt_ns",     "avg_prompt_ts",      "stddev_prompt_ts",
-            "avg_gen_ns",      "stddev_gen_ns",        "avg_gen_ts",         "stddev_gen_ts"
+            "build_commit",     "build_number",     "cpu_info",       "gpu_info",   "backends",     "model_filename",
+            "model_type",       "model_size",       "model_n_params", "n_batch",    "n_ubatch",     "n_threads",
+            "cpu_mask",         "cpu_strict",       "poll",           "type_k",     "type_v",       "n_gpu_layers",
+            "split_mode",       "main_gpu",         "no_kv_offload",  "flash_attn", "tensor_split", "use_mmap",
+            "embeddings",       "n_prompt",         "n_gen",          "test_time",  
+            "avg_prompt_ns",    "stddev_prompt_ns", "avg_prompt_ts",  "stddev_prompt_ts",
+            "avg_gen_ns",       "stddev_gen_ns",    "avg_gen_ts",     "stddev_gen_ts"
         };
         return fields;
     }
@@ -1009,8 +998,7 @@ struct test {
     static field_type get_field_type(const std::string & field) {
         if (field == "build_number" || field == "n_batch" || field == "n_ubatch" || field == "n_threads" ||
             field == "poll" || field == "model_size" || field == "model_n_params" || field == "n_gpu_layers" ||
-            field == "main_gpu" || field == "n_prompt" || field == "n_gen" || field == "avg_e2e_ns" ||
-            field == "stddev_e2e_ns" || field == "avg_prompt_ns" || field == "stddev_prompt_ns" || 
+            field == "main_gpu" || field == "n_prompt" || field == "n_gen" || field == "avg_prompt_ns" || field == "stddev_prompt_ns" || 
             field == "avg_gen_ns" || field == "stddev_gen_ns") {
             return INT;
         }
@@ -1018,7 +1006,7 @@ struct test {
             field == "use_mmap" || field == "embeddings") {
             return BOOL;
         }
-        if (field == "avg_e2e_ts" || field == "stddev_e2e_ts" || field == "avg_prompt_ts" || field == "stddev_prompt_ts" || field == "avg_gen_ts" || field == "stddev_gen_ts") {
+        if (field == "avg_prompt_ts" || field == "stddev_prompt_ts" || field == "avg_gen_ts" || field == "stddev_gen_ts") {
             return FLOAT;
         }
         return STRING;
@@ -1068,10 +1056,6 @@ struct test {
                                             std::to_string(n_prompt),
                                             std::to_string(n_gen),
                                             test_time,
-                                            std::to_string(avg_e2e_ns()),
-                                            std::to_string(stddev_e2e_ns()),
-                                            std::to_string(avg_e2e_ts()),
-                                            std::to_string(stdev_e2e_ts()),
                                             std::to_string(avg_prompt_ns()),
                                             std::to_string(stddev_prompt_ns()),
                                             std::to_string(avg_prompt_ts()),
@@ -1187,8 +1171,6 @@ struct json_printer : public printer {
         }
         fprintf(fout, "  {\n");
         print_fields(test::get_fields(), t.get_values());
-        fprintf(fout, "    \"samples_e2e_ns\": [ %s ],\n", join(t.samples_e2e_ns, ", ").c_str());
-        fprintf(fout, "    \"samples_e2e_ts\": [ %s ]\n", join(t.get_e2e_ts(), ", ").c_str());
         fprintf(fout, "    \"samples_prompt_ns\": [ %s ],\n", join(t.samples_prompt_ns, ", ").c_str());
         fprintf(fout, "    \"samples_prompt_ts\": [ %s ]\n", join(t.get_prompt_ts(), ", ").c_str());
         fprintf(fout, "    \"samples_gen_ns\": [ %s ],\n", join(t.samples_gen_ns, ", ").c_str());
@@ -1211,8 +1193,6 @@ struct jsonl_printer : public printer {
     void print_test(const test & t) override {
         fprintf(fout, "{");
         print_fields(test::get_fields(), t.get_values());
-        fprintf(fout, "\"samples_e2e_ns\": [ %s ],", join(t.samples_e2e_ns, ", ").c_str());
-        fprintf(fout, "\"samples_e2e_ts\": [ %s ]", join(t.get_e2e_ts(), ", ").c_str());
         fprintf(fout, "\"samples_prompt_ns\": [ %s ],", join(t.samples_prompt_ns, ", ").c_str());
         fprintf(fout, "\"samples_prompt_ts\": [ %s ]", join(t.get_prompt_ts(), ", ").c_str());
         fprintf(fout, "\"samples_gen_ns\": [ %s ],", join(t.samples_gen_ns, ", ").c_str());
@@ -1229,8 +1209,11 @@ struct markdown_printer : public printer {
         if (field == "model") {
             return -30;
         }
-        if (field == "e2e t/s" || field == "prompt t/s" || field == "gen t/s") {
-            return 20;
+        if (field == "prompt t/s") {
+            return 18;
+        }
+        if (field == "gen t/s") {
+            return 15;
         }
         if (field == "size" || field == "params") {
             return 10;
@@ -1302,7 +1285,6 @@ struct markdown_printer : public printer {
     void print_header(const cmd_params & params) override {
         // select fields to print
         fields.emplace_back("model");
-        fields.emplace_back("size");
         fields.emplace_back("params");
         fields.emplace_back("backend");
         bool is_cpu_backend = test::get_backend().find("CPU") != std::string::npos ||
@@ -1356,7 +1338,6 @@ struct markdown_printer : public printer {
             fields.emplace_back("embeddings");
         }
         fields.emplace_back("test");
-        fields.emplace_back("e2e t/s");
         fields.emplace_back("prompt t/s");
         fields.emplace_back("gen t/s");
 
@@ -1407,9 +1388,6 @@ struct markdown_printer : public printer {
                     snprintf(buf, sizeof(buf), "pp%d+tg%d", t.n_prompt, t.n_gen);
                 }
                 value = buf;
-            } else if (field == "e2e t/s") {
-                snprintf(buf, sizeof(buf), "%.2f ± %.2f", t.avg_e2e_ts(), t.stdev_e2e_ts());
-                value = buf;
             } else if (field == "prompt t/s") {
                 snprintf(buf, sizeof(buf), "%.2f ± %.2f", t.avg_prompt_ts(), t.stdev_prompt_ts());
                 value = buf;
@@ -1424,7 +1402,7 @@ struct markdown_printer : public printer {
             }
 
             int width = get_field_width(field);
-            if (field == "e2e t/s" || field == "prompt t/s" || field == "gen t/s") {
+            if (field == "prompt t/s" || field == "gen t/s") {
                 // HACK: the utf-8 character is 2 bytes
                 width += 1;
             }
@@ -1692,11 +1670,9 @@ int main(int argc, char ** argv) {
 
             uint64_t t_end = get_time_ns();
 
-            uint64_t e2e_ns = t_end - t_start;
             uint64_t prompt_ns = t_gen_start - t_start;
             uint64_t gen_ns = t_end - t_gen_start;
 
-            t.samples_e2e_ns.push_back(e2e_ns);
             t.samples_prompt_ns.push_back(prompt_ns);
             t.samples_gen_ns.push_back(gen_ns);
         }
