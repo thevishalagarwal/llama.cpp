@@ -160,6 +160,7 @@ struct cmd_params {
     std::vector<int>                 n_prompt;
     std::vector<int>                 n_gen;
     std::vector<std::pair<int, int>> n_pg;
+    std::vector<int>                 n_depth;
     std::vector<int>                 n_batch;
     std::vector<int>                 n_ubatch;
     std::vector<ggml_type>           type_k;
@@ -192,6 +193,7 @@ static const cmd_params cmd_params_defaults = {
     /* n_prompt             */ { 512 },
     /* n_gen                */ { 128 },
     /* n_pg                 */ {},
+    /* n_depth              */ { 0 },
     /* n_batch              */ { 2048 },
     /* n_ubatch             */ { 512 },
     /* type_k               */ { GGML_TYPE_F16 },
@@ -230,6 +232,8 @@ static void print_usage(int /* argc */, char ** argv) {
     printf("  -n, --n-gen <n>                           (default: %s)\n", join(cmd_params_defaults.n_gen, ",").c_str());
     printf("  -pg <pp,tg>                               (default: %s)\n",
            join(transform_to_str(cmd_params_defaults.n_pg, pair_str), ",").c_str());
+    printf("  -d, --depth <n>                           (default: %s)\n",
+           join(cmd_params_defaults.n_depth, ",").c_str());
     printf("  -b, --batch-size <n>                      (default: %s)\n",
            join(cmd_params_defaults.n_batch, ",").c_str());
     printf("  -ub, --ubatch-size <n>                    (default: %s)\n",
@@ -366,6 +370,13 @@ static cmd_params parse_cmd_params(int argc, char ** argv) {
                 break;
             }
             params.n_pg.push_back({ std::stoi(p[0]), std::stoi(p[1]) });
+        } else if (arg == "-d" || arg == "--depth") {
+            if (++i >= argc) {
+                invalid_param = true;
+                break;
+            }
+            auto p = string_split<int>(argv[i], split_delim);
+            params.n_depth.insert(params.n_depth.end(), p.begin(), p.end());
         } else if (arg == "-b" || arg == "--batch-size") {
             if (++i >= argc) {
                 invalid_param = true;
@@ -615,6 +626,9 @@ static cmd_params parse_cmd_params(int argc, char ** argv) {
     if (params.n_pg.empty()) {
         params.n_pg = cmd_params_defaults.n_pg;
     }
+    if (params.n_depth.empty()) {
+        params.n_depth = cmd_params_defaults.n_depth;
+    }
     if (params.n_batch.empty()) {
         params.n_batch = cmd_params_defaults.n_batch;
     }
@@ -674,6 +688,7 @@ struct cmd_params_instance {
     std::string        model;
     int                n_prompt;
     int                n_gen;
+    int                n_depth;
     int                n_batch;
     int                n_ubatch;
     ggml_type          type_k;
@@ -745,7 +760,7 @@ struct cmd_params_instance {
     llama_context_params to_llama_cparams() const {
         llama_context_params cparams = llama_context_default_params();
 
-        cparams.n_ctx       = n_prompt + n_gen;
+        cparams.n_ctx       = n_prompt + n_gen + n_depth;
         cparams.n_batch     = n_batch;
         cparams.n_ubatch    = n_ubatch;
         cparams.type_k      = type_k;
@@ -780,6 +795,7 @@ static std::vector<cmd_params_instance> get_cmd_params_instances(const cmd_param
     for (const auto & nt : params.n_threads)
     for (const auto & cm : params.cpu_mask)
     for (const auto & cs : params.cpu_strict)
+    for (const auto & nd : params.n_depth)
     for (const auto & pl : params.poll) {
         for (const auto & n_prompt : params.n_prompt) {
             if (n_prompt == 0) {
@@ -789,6 +805,7 @@ static std::vector<cmd_params_instance> get_cmd_params_instances(const cmd_param
                 /* .model        = */ m,
                 /* .n_prompt     = */ n_prompt,
                 /* .n_gen        = */ 0,
+                /* .n_depth      = */ nd,
                 /* .n_batch      = */ nb,
                 /* .n_ubatch     = */ nub,
                 /* .type_k       = */ tk,
@@ -818,6 +835,7 @@ static std::vector<cmd_params_instance> get_cmd_params_instances(const cmd_param
                 /* .model        = */ m,
                 /* .n_prompt     = */ 0,
                 /* .n_gen        = */ n_gen,
+                /* .n_depth      = */ nd,
                 /* .n_batch      = */ nb,
                 /* .n_ubatch     = */ nub,
                 /* .type_k       = */ tk,
@@ -847,6 +865,7 @@ static std::vector<cmd_params_instance> get_cmd_params_instances(const cmd_param
                 /* .model        = */ m,
                 /* .n_prompt     = */ n_pg.first,
                 /* .n_gen        = */ n_pg.second,
+                /* .n_depth      = */ nd,
                 /* .n_batch      = */ nb,
                 /* .n_ubatch     = */ nub,
                 /* .type_k       = */ tk,
@@ -900,6 +919,7 @@ struct test {
     bool                     embeddings;
     int                      n_prompt;
     int                      n_gen;
+    int                      n_depth;
     std::string              test_time;
     std::vector<uint64_t>    samples_ns;
 
@@ -931,6 +951,7 @@ struct test {
         embeddings     = inst.embeddings;
         n_prompt       = inst.n_prompt;
         n_gen          = inst.n_gen;
+        n_depth        = inst.n_depth;
         // RFC 3339 date-time format
         time_t t       = time(NULL);
         std::strftime(buf, sizeof(buf), "%FT%TZ", gmtime(&t));
@@ -1362,6 +1383,9 @@ struct markdown_printer : public printer {
                 } else {
                     snprintf(buf, sizeof(buf), "pp%d+tg%d", t.n_prompt, t.n_gen);
                 }
+                if (t.n_depth > 0) {
+                    snprintf(buf, sizeof(buf), "%s @ d%d", buf, t.n_depth);
+                }
                 value = buf;
             } else if (field == "t/s") {
                 snprintf(buf, sizeof(buf), "%.2f ± %.2f", t.avg_ts(), t.stdev_ts());
@@ -1603,6 +1627,12 @@ int main(int argc, char ** argv) {
         llama_attach_threadpool(ctx, threadpool, NULL);
 
         // warmup run
+        // if (t.n_depth > 0) {
+        //     if (params.progress) {
+        //         fprintf(stderr, "llama-bench: benchmark %d/%zu: warmup depth run\n", params_idx, params_count);
+        //     }
+        //     test_prompt(ctx, t.n_depth, t.n_batch, t.n_threads);
+        // }
         if (t.n_prompt > 0) {
             if (params.progress) {
                 fprintf(stderr, "llama-bench: benchmark %d/%zu: warmup prompt run\n", params_idx, params_count);
@@ -1619,6 +1649,14 @@ int main(int argc, char ** argv) {
 
         for (int i = 0; i < params.reps; i++) {
             llama_kv_self_clear(ctx);
+
+            if (t.n_depth > 0) {
+                if (params.progress) {
+                    fprintf(stderr, "llama-bench: benchmark %d/%zu: depth run %d/%d\n", params_idx, params_count,
+                            i + 1, params.reps);
+                }
+                test_prompt(ctx, t.n_depth, t.n_batch, t.n_threads);
+            }
 
             uint64_t t_start = get_time_ns();
 
