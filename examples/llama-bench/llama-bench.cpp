@@ -232,8 +232,7 @@ static void print_usage(int /* argc */, char ** argv) {
     printf("  -n, --n-gen <n>                           (default: %s)\n", join(cmd_params_defaults.n_gen, ",").c_str());
     printf("  -pg <pp,tg>                               (default: %s)\n",
            join(transform_to_str(cmd_params_defaults.n_pg, pair_str), ",").c_str());
-    printf("  -d, --depth <n>                           (default: %s)\n",
-           join(cmd_params_defaults.n_depth, ",").c_str());
+    printf("  -d, --n-depth <n>                         (default: %s)\n", join(cmd_params_defaults.n_depth, ",").c_str());
     printf("  -b, --batch-size <n>                      (default: %s)\n",
            join(cmd_params_defaults.n_batch, ",").c_str());
     printf("  -ub, --ubatch-size <n>                    (default: %s)\n",
@@ -370,7 +369,7 @@ static cmd_params parse_cmd_params(int argc, char ** argv) {
                 break;
             }
             params.n_pg.push_back({ std::stoi(p[0]), std::stoi(p[1]) });
-        } else if (arg == "-d" || arg == "--depth") {
+        } else if (arg == "-d" || arg == "--n-depth") {
             if (++i >= argc) {
                 invalid_param = true;
                 break;
@@ -994,8 +993,8 @@ struct test {
             "model_type",   "model_size",   "model_n_params", "n_batch",    "n_ubatch",     "n_threads",
             "cpu_mask",     "cpu_strict",   "poll",           "type_k",     "type_v",       "n_gpu_layers",
             "split_mode",   "main_gpu",     "no_kv_offload",  "flash_attn", "tensor_split", "use_mmap",
-            "embeddings",   "n_prompt",     "n_gen",          "test_time",  "avg_ns",       "stddev_ns",
-            "avg_ts",       "stddev_ts",
+            "embeddings",   "n_prompt",     "n_gen",          "n_depth",    "test_time",    "avg_ns",       
+            "stddev_ns",    "avg_ts",       "stddev_ts",
         };
         return fields;
     }
@@ -1005,8 +1004,8 @@ struct test {
     static field_type get_field_type(const std::string & field) {
         if (field == "build_number" || field == "n_batch" || field == "n_ubatch" || field == "n_threads" ||
             field == "poll" || field == "model_size" || field == "model_n_params" || field == "n_gpu_layers" ||
-            field == "main_gpu" || field == "n_prompt" || field == "n_gen" || field == "avg_ns" ||
-            field == "stddev_ns") {
+            field == "main_gpu" || field == "n_prompt" || field == "n_gen" || field == "n_depth" || 
+            field == "avg_ns" || field == "stddev_ns") {
             return INT;
         }
         if (field == "f16_kv" || field == "no_kv_offload" || field == "cpu_strict" || field == "flash_attn" ||
@@ -1062,6 +1061,7 @@ struct test {
                                             std::to_string(embeddings),
                                             std::to_string(n_prompt),
                                             std::to_string(n_gen),
+                                            std::to_string(n_depth),
                                             test_time,
                                             std::to_string(avg_ns()),
                                             std::to_string(stdev_ns()),
@@ -1239,7 +1239,7 @@ struct markdown_printer : public printer {
             return 4;
         }
         if (field == "test") {
-            return 13;
+            return 15;
         }
 
         int width = std::max((int) field.length(), 10);
@@ -1627,12 +1627,6 @@ int main(int argc, char ** argv) {
         llama_attach_threadpool(ctx, threadpool, NULL);
 
         // warmup run
-        // if (t.n_depth > 0) {
-        //     if (params.progress) {
-        //         fprintf(stderr, "llama-bench: benchmark %d/%zu: warmup depth run\n", params_idx, params_count);
-        //     }
-        //     test_prompt(ctx, t.n_depth, t.n_batch, t.n_threads);
-        // }
         if (t.n_prompt > 0) {
             if (params.progress) {
                 fprintf(stderr, "llama-bench: benchmark %d/%zu: warmup prompt run\n", params_idx, params_count);
