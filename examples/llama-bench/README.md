@@ -154,7 +154,7 @@ $ ./llama-bench -ngl 10,20,30,31,32,33,34,35
 ### Different prefilled context
 
 ```
-$ ./llama-bench.exe -d 0,512
+$ ./llama-bench -d 0,512
 ```
 
 | model                          |       size |     params | backend    | ngl |            test |                  t/s |
