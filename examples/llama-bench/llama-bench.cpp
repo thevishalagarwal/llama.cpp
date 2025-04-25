@@ -1384,7 +1384,8 @@ struct markdown_printer : public printer {
                     snprintf(buf, sizeof(buf), "pp%d+tg%d", t.n_prompt, t.n_gen);
                 }
                 if (t.n_depth > 0) {
-                    snprintf(buf, sizeof(buf), "%s @ d%d", buf, t.n_depth);
+                    int len = strlen(buf);
+                    snprintf(buf + len, sizeof(buf) - len, " @ d%d", t.n_depth);
                 }
                 value = buf;
             } else if (field == "t/s") {
