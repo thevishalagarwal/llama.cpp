@@ -1650,7 +1650,7 @@ int main(int argc, char ** argv) {
                     fprintf(stderr, "llama-bench: benchmark %d/%zu: depth run %d/%d\n", params_idx, params_count,
                             i + 1, params.reps);
                 }
-                test_prompt(ctx, t.n_depth, 512, cpu_get_num_math());
+                test_prompt(ctx, t.n_depth, t.n_batch, t.n_threads);
             }
 
             uint64_t t_start = get_time_ns();
