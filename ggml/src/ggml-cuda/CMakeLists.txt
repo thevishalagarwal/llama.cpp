@@ -40,7 +40,7 @@ if (CUDAToolkit_FOUND)
 
             # Always included after base architecture assuming CUDA toolkit version is 11.1 or higher
             list(APPEND ARCH_LIST "61-virtual" "70-virtual" "75-virtual" "80-virtual" "86-real")
-            
+
             # Version-dependent architectures for newer GPUs
             if (CUDAToolkit_VERSION VERSION_GREATER_EQUAL "11.8")
                 list(APPEND ARCH_LIST "89-real")
@@ -49,7 +49,7 @@ if (CUDAToolkit_FOUND)
             if (CUDAToolkit_VERSION VERSION_GREATER_EQUAL "12.8")
                 list(APPEND ARCH_LIST "120-real")
             endif()
-            
+
             set(CMAKE_CUDA_ARCHITECTURES ${ARCH_LIST})
         endif()
     endif()
